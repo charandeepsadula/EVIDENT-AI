@@ -7,5 +7,11 @@
     "dev": "npm run dev --workspace=@evident-ai/frontend",
     "build": "npm run build --workspace=@evident-ai/frontend",
     "lint": "npm run lint --workspace=@evident-ai/frontend"
+  },
+  "optionalDependencies": {
+    "@tailwindcss/oxide-linux-x64-gnu": "4.3.5",
+    "@tailwindcss/oxide-linux-x64-musl": "4.3.5",
+    "lightningcss-linux-x64-gnu": "1.33.0",
+    "lightningcss-linux-x64-musl": "1.33.0"
   }
 }
