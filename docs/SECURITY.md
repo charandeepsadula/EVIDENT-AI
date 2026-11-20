@@ -1,0 +1,10 @@
+# Security and deployment notes
+
+- Provider credentials belong in the backend environment or deployment secret manager. They are not passed to frontend code or included in provider-failure logs. The frontend only receives the Supabase publishable key when hosted mode uses Supabase Auth.
+- Local development uses one configured bearer token and one shared SQLite workspace. It is restricted to `APP_ENV=development`; bind the API and frontend to loopback and do not expose local mode publicly. It is not multi-user isolation.
+- Hosted mode validates Supabase sessions server-side. The migration defines owner and organization access policies for its protected tables. Apply and review those policies in the target Supabase project before deployment; this repository does not verify a deployed project.
+- Hosted file bytes use the private `investigation-files` storage bucket and are registered only after investigation ownership, MIME type, and media-specific size checks. The local image endpoint accepts JPEG, PNG, WebP, and TIFF up to 25 MB, verifies the decoded format, and caps image dimensions at 50 megapixels.
+- Public URL submissions reject local/private IP targets before asking Tavily to extract them. Retrieved source URLs are restricted to HTTP(S), stripped of credentials, secret query parameters, and fragments, and cited passages are treated as untrusted input to Gemini.
+- Image metadata analysis reports device-supplied EXIF dates and camera make/model when present; it does not retain GPS coordinates. Metadata and perceptual hashes are indicators only, not authenticity or manipulation determinations.
+- Logs may contain bounded provider status and error messages after exact credential redaction. Prompts, source passages, uploaded file bytes, and API keys are not logged by the provider diagnostics.
+- Hosted deployment, storage bucket privacy, database policies, and production secret handling must be verified in the target environment. No production deployment or external security audit is claimed here.

@@ -1,0 +1,45 @@
+# Dependencies and build output
+node_modules/
+*.egg-info/
+.next/
+out/
+dist/
+build/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+# Local data, databases and user uploads
+data/
+backend/data/
+*.sqlite3
+*.sqlite
+backend/local_uploads/
+uploads/
+
+# Local environment and secrets
+.env
+.env.*
+*.env
+*.env.*
+frontend/.env.local
+backend/.env
+!.env.example
+!.env.*.example
+!frontend/.env.example
+!backend/.env.example
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs and generated artifacts
+*.log
+coverage/
+playwright-report/
+test-results/

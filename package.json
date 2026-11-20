@@ -1,0 +1,11 @@
+{
+  "name": "evident-ai",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": ["frontend"],
+  "scripts": {
+    "dev": "npm run dev --workspace=@evident-ai/frontend",
+    "build": "npm run build --workspace=@evident-ai/frontend",
+    "lint": "npm run lint --workspace=@evident-ai/frontend"
+  }
+}
