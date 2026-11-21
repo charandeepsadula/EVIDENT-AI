@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "npm run dev --workspace=@evident-ai/frontend",
     "build": "npm run build --workspace=@evident-ai/frontend",
+    "start": "npm run start --workspace=@evident-ai/frontend",
     "lint": "npm run lint --workspace=@evident-ai/frontend"
   },
   "optionalDependencies": {
