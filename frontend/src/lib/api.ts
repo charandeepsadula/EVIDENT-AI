@@ -9,16 +9,28 @@ export class ApiError extends Error {
   }
 }
 
+export const isSupabaseConfigured = Boolean(
+  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+);
+
+export const isLocalWorkspace =
+  !isSupabaseConfigured || process.env.NEXT_PUBLIC_LOCAL_DEV_MODE === "true";
+
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const base = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (!base) throw new ApiError("API address is not configured.", 503);
   let token: string | undefined;
-  if (process.env.NEXT_PUBLIC_LOCAL_DEV_MODE === "true") token = process.env.NEXT_PUBLIC_LOCAL_DEV_TOKEN;
-  else {
+  if (isLocalWorkspace) {
+    token = process.env.NEXT_PUBLIC_LOCAL_DEV_TOKEN || "local-workspace-token";
+  } else {
     const supabase = createClient();
-    if (!supabase) throw new ApiError("Supabase sign-in is not configured.", 503);
-    const { data } = await supabase.auth.getSession();
-    token = data.session?.access_token;
+    if (supabase) {
+      const { data } = await supabase.auth.getSession();
+      token = data.session?.access_token;
+    }
+    if (!token && !isSupabaseConfigured) {
+      token = process.env.NEXT_PUBLIC_LOCAL_DEV_TOKEN || "local-workspace-token";
+    }
   }
   if (!token) throw new ApiError("Your session has expired. Sign in again.", 401);
   let response: Response;
@@ -46,11 +58,16 @@ export async function apiUpload<T>(path: string, file: File): Promise<T> {
   const base = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (!base) throw new ApiError("API address is not configured.", 503);
   let token: string | undefined;
-  if (process.env.NEXT_PUBLIC_LOCAL_DEV_MODE === "true") token = process.env.NEXT_PUBLIC_LOCAL_DEV_TOKEN;
-  else {
+  if (isLocalWorkspace) {
+    token = process.env.NEXT_PUBLIC_LOCAL_DEV_TOKEN || "local-workspace-token";
+  } else {
     const supabase = createClient();
-    if (!supabase) throw new ApiError("Supabase sign-in is not configured.", 503);
-    token = (await supabase.auth.getSession()).data.session?.access_token;
+    if (supabase) {
+      token = (await supabase.auth.getSession()).data.session?.access_token;
+    }
+    if (!token && !isSupabaseConfigured) {
+      token = process.env.NEXT_PUBLIC_LOCAL_DEV_TOKEN || "local-workspace-token";
+    }
   }
   if (!token) throw new ApiError("Your session or local access token is missing.", 401);
   const form = new FormData(); form.append("file", file);

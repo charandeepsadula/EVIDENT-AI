@@ -121,7 +121,13 @@ export function MediaLab({ kind }: { kind: MediaKind }) {
       return;
     }
 
-    if (process.env.NEXT_PUBLIC_LOCAL_DEV_MODE === "true") {
+    const isSupabaseConfigured = Boolean(
+      process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+    );
+    const isLocal = !isSupabaseConfigured || process.env.NEXT_PUBLIC_LOCAL_DEV_MODE === "true";
+
+    if (isLocal) {
       setBusy(true);
       setMessage("Analyzing image EXIF metadata and running Gemini Vision inspection...");
       try {

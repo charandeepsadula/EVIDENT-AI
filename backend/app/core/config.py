@@ -1,3 +1,4 @@
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,6 +23,17 @@ class Settings(BaseSettings):
     max_upload_bytes: int = 524288000
 
     model_config = SettingsConfigDict(env_file=(".env", "backend/.env", "../.env"), env_file_encoding="utf-8", extra="ignore")
+
+    @property
+    def is_supabase_configured(self) -> bool:
+        return bool(self.supabase_url and self.supabase_publishable_key)
+
+    @model_validator(mode="after")
+    def auto_enable_local_mode(self) -> "Settings":
+        # When Supabase is not configured, automatically use Local Workspace mode
+        if not self.is_supabase_configured:
+            self.local_dev_mode = True
+        return self
 
 
 settings = Settings()

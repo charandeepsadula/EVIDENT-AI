@@ -16,19 +16,23 @@ const pages = {
 } as const;
 
 const services = [
-  { title: "Supabase", detail: "Authentication, PostgreSQL, and private file storage", need: "Required for hosted accounts, persistence, and private uploads" },
+  { title: "Supabase", detail: "Authentication, PostgreSQL, and private file storage", need: "Optional for hosted multi-user accounts. Local SQLite handles single-user workspaces." },
   { title: "Gemini API", detail: "Structured AI claim extraction and evidence assessment", need: "Server-side only; verify provider readiness from a real investigation run" },
   { title: "Tavily research", detail: "Accessible-source search and submitted-page extraction", need: "Server-side only; verify provider readiness from a real investigation run" },
-  { title: "Redis + workers", detail: "Durable queue for long-running hosted media analysis", need: "Not required by the local SQLite MVP" },
+  { title: "Redis + workers", detail: "Durable queue for long-running hosted media analysis", need: "Not required by the local SQLite workspace" },
   { title: "Forensic services", detail: "OCR, transcription, and specialized detectors", need: "Capabilities are limited to the analysis tools configured and evaluated" },
 ];
 
 export function WorkspacePage({ name }: { name: keyof typeof pages }) {
   const page = pages[name];
-  const local = process.env.NEXT_PUBLIC_LOCAL_DEV_MODE === "true";
+  const isSupabaseConfigured = Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  );
+  const local = !isSupabaseConfigured || process.env.NEXT_PUBLIC_LOCAL_DEV_MODE === "true";
   const settingsDescription = local
-    ? "Local SQLite is active. Gemini and Tavily credentials stay on the backend; provider readiness is confirmed by a real investigation run."
-    : "Review the backend and hosted services required for this workspace.";
+    ? "Local SQLite workspace is active. Gemini and Tavily credentials stay on the backend; provider readiness is confirmed by a real investigation run."
+    : "Review the backend and hosted services configured for this workspace.";
   const apiDocs = process.env.NEXT_PUBLIC_API_BASE_URL
     ? `${process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/$/, "")}/docs`
     : undefined;
@@ -40,7 +44,15 @@ export function WorkspacePage({ name }: { name: keyof typeof pages }) {
         {name === "settings" ? (
           <div className="integration-grid">
             {services.map(({ title, detail, need }) => {
-              const status = title === "Forensic services" ? "LIMITED MVP" : title === "Gemini API" || title === "Tavily research" ? "CHECK ON RUN" : local ? "NOT USED LOCALLY" : "NOT VERIFIED";
+              const status = title === "Forensic services"
+                ? "LIMITED MVP"
+                : title === "Gemini API" || title === "Tavily research"
+                ? "CHECK ON RUN"
+                : title === "Supabase"
+                ? (isSupabaseConfigured ? "CONFIGURED" : "OPTIONAL (LOCAL ACTIVE)")
+                : local
+                ? "NOT USED LOCALLY"
+                : "NOT VERIFIED";
               return <article className="integration-card" key={title}>
                 <div className="integration-top"><span className="integration-icon">{title.slice(0, 1)}</span><span className="status-badge">{status}</span></div>
                 <h2>{title}</h2><p>{detail}</p><small>{need}</small>
