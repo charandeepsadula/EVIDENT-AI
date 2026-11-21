@@ -80,7 +80,7 @@ ASSESSMENT_SCHEMA = {
 async def gemini_json(prompt: str, schema: dict[str, Any]) -> tuple[dict[str, Any], int]:
     if not settings.gemini_api_key:
         raise ProviderUnavailable("GEMINI_NOT_CONFIGURED")
-    model = settings.gemini_model.strip()
+    model = settings.gemini_model.strip() or "gemini-3.5-flash-lite"
     payload = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"responseMimeType": "application/json", "responseSchema": schema}}
     try:
         async with httpx.AsyncClient(timeout=GEMINI_TIMEOUT) as client:
@@ -207,8 +207,9 @@ async def _model_supports_generate_content(client: httpx.AsyncClient, model: str
     except httpx.HTTPError as exc:
         logger.warning("Could not verify configured Gemini fallback model=%s error_type=%s", model, type(exc).__name__)
         return False
-    if response.is_error:
-        _log_gemini_http_error(response, model)
+    if not response or getattr(response, "is_error", True):
+        if response:
+            _log_gemini_http_error(response, model)
         return False
     try:
         metadata = response.json()

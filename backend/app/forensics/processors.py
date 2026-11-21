@@ -92,7 +92,7 @@ async def analyze_image_with_ai(path: Path, mime_type: str = "image/jpeg") -> di
     try:
         raw_bytes = path.read_bytes()
         b64_data = base64.b64encode(raw_bytes).decode("utf-8")
-        vision_model = settings.gemini_model.strip() or "gemini-3.8-flash"
+        vision_model = settings.gemini_model.strip() or "gemini-3.5-flash-lite"
         
         prompt = (
             "You are an expert digital forensics investigator and media intelligence analyst. "

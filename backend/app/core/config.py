@@ -23,8 +23,8 @@ class Settings(BaseSettings):
     supabase_service_role_key: str | None = None
     redis_url: str | None = None
     gemini_api_key: str | None = None
-    gemini_model: str = "gemini-2.5-flash"
-    gemini_fallback_model: str | None = "gemini-2.5-flash-lite"
+    gemini_model: str = "gemini-3.5-flash-lite"
+    gemini_fallback_model: str | None = "gemini-3.8-flash"
     tavily_api_key: str | None = None
     max_text_chars: int = 20000
     max_url_chars: int = 2048

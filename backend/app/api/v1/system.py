@@ -108,38 +108,48 @@ async def test_gemini_connection():
         return {"ok": False, "status": "GEMINI_NOT_CONFIGURED", "message": "No API key configured."}
     
     start = time.perf_counter()
-    try:
-        model = settings.gemini_model.strip() or "gemini-3.8-flash"
-        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-        payload = {
-            "contents": [{"parts": [{"text": "Respond with single word: OK"}]}],
-            "generationConfig": {"maxOutputTokens": 5}
-        }
-        async with httpx.AsyncClient(timeout=httpx.Timeout(25.0, connect=10.0)) as client:
-            resp = await client.post(endpoint, headers={"x-goog-api-key": settings.gemini_api_key}, json=payload)
-            elapsed_ms = round((time.perf_counter() - start) * 1000, 1)
-            if resp.status_code == 200:
-                return {
-                    "ok": True,
-                    "status": "OPERATIONAL",
-                    "latency_ms": elapsed_ms,
-                    "model": model,
-                    "message": "Gemini API responded successfully."
-                }
-            return {
-                "ok": False,
-                "status": f"HTTP_{resp.status_code}",
-                "latency_ms": elapsed_ms,
-                "message": resp.text[:200]
+    candidates = [
+        settings.gemini_model.strip(),
+        (settings.gemini_fallback_model or "").strip(),
+        "gemini-3.5-flash-lite",
+        "gemini-3.8-flash",
+    ]
+    seen = set()
+    models_to_try = [m for m in candidates if m and not (m in seen or seen.add(m))]
+
+    last_status = "UNKNOWN"
+    last_msg = ""
+    for model in models_to_try:
+        try:
+            endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+            payload = {
+                "contents": [{"parts": [{"text": "Respond with single word: OK"}]}],
+                "generationConfig": {"maxOutputTokens": 5}
             }
-    except Exception as exc:
-        elapsed_ms = round((time.perf_counter() - start) * 1000, 1)
-        return {
-            "ok": False,
-            "status": "CONNECTION_FAILED",
-            "latency_ms": elapsed_ms,
-            "message": str(exc)
-        }
+            async with httpx.AsyncClient(timeout=httpx.Timeout(15.0, connect=8.0)) as client:
+                resp = await client.post(endpoint, headers={"x-goog-api-key": settings.gemini_api_key}, json=payload)
+                elapsed_ms = round((time.perf_counter() - start) * 1000, 1)
+                if resp.status_code == 200:
+                    return {
+                        "ok": True,
+                        "status": "OPERATIONAL",
+                        "latency_ms": elapsed_ms,
+                        "model": model,
+                        "message": "Gemini API responded successfully."
+                    }
+                last_status = f"HTTP_{resp.status_code}"
+                last_msg = resp.text[:200]
+        except Exception as exc:
+            elapsed_ms = round((time.perf_counter() - start) * 1000, 1)
+            last_status = "CONNECTION_FAILED"
+            last_msg = str(exc)
+
+    return {
+        "ok": False,
+        "status": last_status,
+        "latency_ms": round((time.perf_counter() - start) * 1000, 1),
+        "message": last_msg
+    }
 
 
 @router.post("/system/test-tavily")
