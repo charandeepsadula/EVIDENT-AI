@@ -33,9 +33,8 @@ export function WorkspacePage({ name }: { name: keyof typeof pages }) {
   const settingsDescription = local
     ? "Local SQLite workspace is active. Gemini and Tavily credentials stay on the backend; provider readiness is confirmed by a real investigation run."
     : "Review the backend and hosted services configured for this workspace.";
-  const apiDocs = process.env.NEXT_PUBLIC_API_BASE_URL
-    ? `${process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/$/, "")}/docs`
-    : undefined;
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? "https://evident-ai-backend-s616.onrender.com/api/v1" : "http://127.0.0.1:8000/api/v1");
+  const apiDocs = apiBase ? `${apiBase.replace(/\/api\/v1\/?$/, "")}/docs` : undefined;
 
   return (
     <WorkspaceShell active={page.active}>

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { PageHeading, WorkspaceShell } from "@/components/workspace-shell";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, getApiBaseUrl } from "@/lib/api";
 import {
   Activity,
   Cpu,
@@ -63,9 +63,10 @@ export default function SystemHealthPage() {
     setRunningTest(true);
     setResponsePayload(null);
     try {
-      const base = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000/api/v1";
-      const token = process.env.NEXT_PUBLIC_LOCAL_DEV_TOKEN;
-      const res = await fetch(`${base.replace(/\/$/, "")}${endpoint}`, {
+      const base = getApiBaseUrl();
+      const token = process.env.NEXT_PUBLIC_LOCAL_DEV_TOKEN || "local-workspace-token";
+      const normalizedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+      const res = await fetch(`${base}${normalizedEndpoint}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",

@@ -16,9 +16,19 @@ export const isSupabaseConfigured = Boolean(
 export const isLocalWorkspace =
   !isSupabaseConfigured || process.env.NEXT_PUBLIC_LOCAL_DEV_MODE === "true";
 
+export function getApiBaseUrl(): string {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+  if (envUrl) {
+    return envUrl.replace(/\/$/, "");
+  }
+  if (typeof window !== "undefined" && window.location.hostname.includes("onrender.com")) {
+    return "https://evident-ai-backend-s616.onrender.com/api/v1";
+  }
+  return "http://127.0.0.1:8000/api/v1";
+}
+
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (!base) throw new ApiError("API address is not configured.", 503);
+  const base = getApiBaseUrl();
   let token: string | undefined;
   if (isLocalWorkspace) {
     token = process.env.NEXT_PUBLIC_LOCAL_DEV_TOKEN || "local-workspace-token";
@@ -34,11 +44,12 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   }
   if (!token) throw new ApiError("Your session has expired. Sign in again.", 401);
   let response: Response;
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   try {
     const headers = new Headers(init.headers);
     headers.set("Content-Type", "application/json");
     headers.set("Authorization", `Bearer ${token}`);
-    response = await fetch(`${base.replace(/\/$/, "")}${path}`, {
+    response = await fetch(`${base}${normalizedPath}`, {
       ...init,
       headers,
       cache: "no-store",
@@ -55,8 +66,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
 }
 
 export async function apiUpload<T>(path: string, file: File): Promise<T> {
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (!base) throw new ApiError("API address is not configured.", 503);
+  const base = getApiBaseUrl();
   let token: string | undefined;
   if (isLocalWorkspace) {
     token = process.env.NEXT_PUBLIC_LOCAL_DEV_TOKEN || "local-workspace-token";
@@ -72,7 +82,8 @@ export async function apiUpload<T>(path: string, file: File): Promise<T> {
   if (!token) throw new ApiError("Your session or local access token is missing.", 401);
   const form = new FormData(); form.append("file", file);
   let response: Response;
-  try { response = await fetch(`${base.replace(/\/$/, "")}${path}`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form, cache: "no-store" }); }
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  try { response = await fetch(`${base}${normalizedPath}`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form, cache: "no-store" }); }
   catch { throw new ApiError("The EVIDENT AI API is not reachable. Start the backend and try again.", 503); }
   const body = await response.json().catch(() => null);
   if (!response.ok) { const detail = body?.detail; throw new ApiError(typeof detail === "string" ? detail : detail?.message ?? "The upload failed.", response.status, detail?.code, detail?.missing); }
